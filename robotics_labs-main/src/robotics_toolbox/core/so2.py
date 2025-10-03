@@ -23,16 +23,16 @@ class SO2:
         super().__init__()
         # todo HW01: implement computation of rotation matrix from the given angle
         print("--------------------ANGLE STARTED--------------")
-        self.rot: np.ndarray = np.zeros((2, 2))
+        #self.rot: np.ndarray = np.zeros((2, 2)) # not needed
         print("narray created")
-        self.rot: np.narray = ((np.cos(angle), -np.sin(angle)), (np.sin(angle), np.cos(angle)))
+        self.rot: np.ndarray = ([np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)])
         print("rot filled successfully")
 
     def __mul__(self, other: SO2) -> SO2:
         """Compose two rotations, i.e., self * other"""
         # todo: HW01: implement composition of two rotation.
         print("-------------------------COMPOSITION STARTED --------------------------")
-        self.rot: np.narray = np.matmul(self.rot, other. rot)
+        self.mul: np.ndarray = np.matmul(self.rot, other. rot)
         print("-----------------------------------------------------------------------")
         pass
 
@@ -50,7 +50,7 @@ class SO2:
         object."""
         # todo: HW01: implement inverse, do not use np.linalg.inverse()
         print("---------------------------INVERSE STARTED------------------------------------")
-        self.rot = ((self.rot[0,0], -self.rot[0,1]), (-self.rot[1,0], self.rot[1,1]))
+        self.inverse = ((self.rot[0,0], -self.rot[0,1]), (-self.rot[1,0], self.rot[1,1]))
         pass
 
     def act(self, vector: ArrayLike) -> np.ndarray:
