@@ -31,13 +31,37 @@ class SO3:
         assert v.shape == (3,)
         t = SO3()
         # todo HW01: implement Rodrigues' formula, t.rot = ...
+        angle = np.linalg.norm(v)
+        skew_sym_matrix: np.ndarray = np.array([
+            [0, -v[2], v[1]],
+            [v[2], 0, -v[0]],
+            [-v[1], v[0], 0]
+        ])
+        t.rot = np.eye(3) + np.sin(v)*skew_sym_matrix + (1 - np.cos(v))*(skew_sym_matrix@skew_sym_matrix)
         return t
 
     def log(self) -> np.ndarray:
         """Compute rotation vector from this SO3"""
         # todo HW01: implement computation of rotation vector from this SO3
-        v = np.zeros(3)
-        return v
+        if np.allclose(self.rot, np.eye(3)):
+            v = np.zeros(3)
+            angle = 0
+        elif(np.trace(self.rot) == -1):
+            angle = np.pi
+            if (self.rot[2][2] != -1):
+                v = np.array([self.rot[0][2], self.rot[1][2], 1+self.rot[2][2]]) * (1/(np.sqrt(2*(1+self.rot[2][2]))))
+            elif (self.rot[1][1] != -1):
+                v = np.array([self.rot[0][1], 1+self.rot[1][1], self.rot[2][1]]) * (1/(np.sqrt(2*(1+self.rot[1][1]))))
+            elif (self.rot[0][0] != -1):
+                v = np.array([1+self.rot[0][0], self.rot[1][0], self.rot[2][0]]) * (1/(np.sqrt(2*(1+self.rot[0][0]))))
+            else:
+                print("Error: no if executed")
+                v = np.zeros(3)
+        else:
+            angle = np.arccos((1/2)*(np.trace(self.rot)-1))
+            skew_sym_matrix: np.ndarray = np.array(1/(2*np.sin(angle))*(self.rot - self.rot.T))
+            v = np.array([skew_sym_matrix[2][1], skew_sym_matrix[0][2], skew_sym_matrix[1][0]])
+        return angle*v
 
     def __mul__(self, other: SO3) -> SO3:
         """Compose two rotations, i.e., self * other"""

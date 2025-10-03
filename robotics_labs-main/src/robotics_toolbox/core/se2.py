@@ -44,26 +44,27 @@ class SE2:
     def __mul__(self, other: SE2) -> SE2:
         """Compose two transformation, i.e., self * other"""
         # todo: HW01: implement composition of two transformation.
-        print("//////////////////////////////// MUL /////////////////////////////////////////////////")
-        self.translation = np.matmul(self.translation, other.translation)
-        return SE2()
+        res_se2 = SE2()
+        res_se2.rotation.rot = self.rotation.rot @ other.rotation.rot
+        res_se2.translation = self.rotation.rot @ other.translation + self.translation
+        return res_se2
 
     def inverse(self) -> SE2:
         """Compute inverse of the transformation. Do not use np.linalg.inv."""
         # todo: HW1 implement inverse
-        print("//////////////////////////////// INVERSE /////////////////////////////////////////////////")
-        n
-        self.translation = np.narray((),(),(0,0,1))
-        return SE2()
+        res_se2 = SE2()
+        res_se2.rotation = self.rotation.inverse()
+        res_se2.translation = -(res_se2.rotation.rot @ self.translation)
+        return res_se2
 
     def act(self, vector: ArrayLike) -> np.ndarray:
         """Transform given 2D vector by this SE2 transformation."""
         v = np.asarray(vector)
         assert v.shape == (2,)
-        print("//////////////////////////////// ACT TRANSFORMATION /////////////////////////////////////////////////")
-
         # todo: HW1 implement transformation of a given vector
-        return v
+
+        res_v = self.rotation.act(v) + self.translation
+        return res_v
 
     def set_from(self, other: SE2):
         """Copy the properties into current instance."""
