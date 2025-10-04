@@ -32,12 +32,16 @@ class SO3:
         t = SO3()
         # todo HW01: implement Rodrigues' formula, t.rot = ...
         angle = np.linalg.norm(v)
-        skew_sym_matrix: np.ndarray = np.array([
-            [0, -v[2], v[1]],
-            [v[2], 0, -v[0]],
-            [-v[1], v[0], 0]
-        ])
-        t.rot = np.eye(3) + np.sin(v)*skew_sym_matrix + (1 - np.cos(v))*(skew_sym_matrix@skew_sym_matrix)
+        if np.isclose(angle, 0.0):
+            t.rot = np.np.eye(3)
+        else:
+            v_norm = v/angle #must normalize the vector for rodrigues
+            skew_sym_matrix: np.ndarray = np.array([
+                [0, -v_norm[2], v_norm[1]],
+                [v_norm[2], 0, -v_norm[0]],
+                [-v_norm[1], v_norm[0], 0]
+            ])
+            t.rot = np.eye(3) + np.sin(angle)*skew_sym_matrix + (1 - np.cos(angle))*(skew_sym_matrix@skew_sym_matrix)
         return t
 
     def log(self) -> np.ndarray:
@@ -66,12 +70,16 @@ class SO3:
     def __mul__(self, other: SO3) -> SO3:
         """Compose two rotations, i.e., self * other"""
         # todo: HW01: implement composition of two rotation.
-        return SO3()
+        res = SO3()
+        res.rot = self.rot @ other.rot
+        return res
 
     def inverse(self) -> SO3:
         """Return inverse of the transformation."""
         # todo: HW01: implement inverse, do not use np.linalg.inverse()
-        return SO3()
+        res = SO3()
+        res.rot = self.rot.T
+        return res
 
     def act(self, vector: ArrayLike) -> np.ndarray:
         """Rotate given vector by this transformation."""
