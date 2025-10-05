@@ -31,18 +31,25 @@ class SE3:
     def __mul__(self, other: SE3) -> SE3:
         """Compose two transformation, i.e., self * other"""
         # todo: HW01: implement composition of two transformation.
-        return SE3()
+        res_mul = SE3()
+        res_mul.rotation.rot = self.rotation.rot @ other.rotation.rot
+        res_mul.translation = self.rotation.rot @ other.translation + self.translation
+        return res_mul
 
     def inverse(self) -> SE3:
         """Compute inverse of the transformation"""
         # todo: HW1 implement inverse
-        return SE3()
+        res_inverse = SE3()
+        res_inverse.rotation = self.rotation.inverse()
+        res_inverse.translation = - (res_inverse.rotation.rot @ self.translation)
+        return res_inverse
 
     def act(self, vector: ArrayLike) -> np.ndarray:
         """Rotate given 3D vector by this transformation."""
         v = np.asarray(vector)
         assert v.shape == (3,)
         # todo: HW1 implement transformation of a given vector
+        v = self.rotation.rot @ v + self.translation
         return v
 
     def set_from(self, other: SE3):
