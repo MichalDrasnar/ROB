@@ -140,15 +140,11 @@ class SO3:
         qz = q[2]
         qw = q[3]
         res_fq = SO3()
-        angle = 2*np.arccos(qw)
-        v = np.array([qx, qy, qz])
-        v_norm = v/np.linalg.norm(v)
-        skew_sym_matrix: np.ndarray = np.array([
-            [0, -v_norm[2], v_norm[1]],
-            [v_norm[2], 0, -v_norm[0]],
-            [-v_norm[1], v_norm[0], 0]
+        res_fq.rot = np.array([
+            [1 - 2*(qy**2 + qz**2), 2*(qx*qy - qz*qw), 2*(qx*qz + qy*qw)],
+            [2*(qx*qy + qz*qw), 1 - 2*(qx**2 + qz**2), 2*(qy*qz - qx*qw)],
+            [2*(qx*qz - qy*qw), 2*(qy*qz + qx*qw), 1 - 2*(qx**2 + qy**2)]
         ])
-        res_fq.rot = np.array([skew_sym_matrix[2][1], skew_sym_matrix[0][2], skew_sym_matrix[1][0]])
         return res_fq
         #raise NotImplementedError("From quaternion needs to be implemented")
 
@@ -170,20 +166,22 @@ class SO3:
         res = SO3()
         axis = np.asarray(axis)
         angle = angle
-        #here do skewsym -> rodrigues
-
+        skew_sym_matrix: np.ndarray = np.array([
+            [0, -axis[2], axis[1]],
+            [axis[2], 0, -axis[0]],
+            [-axis[1], axis[0], 0]
+        ])
+        res.rot = np.eye(3) + np.sin(angle)*skew_sym_matrix + (1 - np.cos(angle))*(skew_sym_matrix@skew_sym_matrix)
         return res
         #raise NotImplementedError("Needs to be implemented")
 
     def to_angle_axis(self) -> tuple[float, np.ndarray]:
         """Compute angle axis representation from self."""
         # todo: HW1opt: implement to angle axis
-        v = self.log(self)
+        v = self.log()
         angle = np.linalg.norm(v)
         v_norm: np.ndarray = v/angle
         return [angle, v_norm]
-
-
         #raise NotImplementedError("Needs to be implemented")
 
     @staticmethod
@@ -193,7 +191,22 @@ class SO3:
         seq: is a list of axis around which angles rotate, e.g. 'xyz', 'xzx', etc.
         """
         # todo: HW1opt: implement from euler angles
-        raise NotImplementedError("Needs to be implemented")
+        res_eul = SO3()
+        res_eul.rot = np.eye(3)
+        #i have rx, ry, rz for axis-based rotations
+        for i in range(len(seq)):
+            angle = angles[i]
+            match seq[i]:
+                case 'x':
+                    res_eul = res_eul * SO3.rx(angle)
+                case 'y':
+                    res_eul = res_eul * SO3.ry(angle)
+                case 'z':
+                    res_eul = res_eul * SO3.rz(angle)
+                case _:
+                    print("ErrorValue: Axis not recognized")                   
+        return res_eul
+        #raise NotImplementedError("Needs to be implemented")
 
     def __hash__(self):
         return id(self)
