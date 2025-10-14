@@ -1,0 +1,140 @@
+<robot name="simple_robot">
+
+    <material name="gray">
+        <color rgba="0.5 0.5 0.5 1"/>
+    </material>
+    <material name="light_gray">
+        <color rgba="0.8 0.8 0.8 1"/>
+    </material>
+    <material name="red">
+        <color rgba="1 0 0 1"/>
+    </material>
+
+    <link name="base">
+        <visual>
+            <geometry>
+                <box size="0.3 0.3 0.3"/>
+            </geometry>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <material name="gray"/>
+        </visual>
+    </link>
+
+    <joint name="joint_Z" type="revolute">
+        <parent link="base"/>
+        <child link="cylinder_1"/>
+        <axis xyz="0 0 1"/>
+        <origin xyz="0 0 0.15" rpy="0 0 0"/>
+        <limit lower="-3.14" upper="3.14" effort="10" velocity="1.0"/>
+    </joint>
+    
+    <link name="cylinder_1">
+        <visual>
+            <geometry>
+                <cylinder radius="0.05" length="0.5"/>
+            </geometry>
+            <origin xyz="0 0 0.25" rpy="0 0 0"/>
+            <material name="light_gray"/>
+        </visual>
+    </link>
+
+    <joint name="fixed_sphere_1" type="fixed">
+        <parent link="cylinder_1"/>
+        <child link="sphere_1"/>
+        <origin xyz="0 0 0.5" rpy="0 0 0"/>
+    </joint>
+
+
+    <link name="sphere_1">
+        <visual>
+            <geometry>
+                <sphere radius="0.06"/>
+            </geometry>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <material name="red"/>
+        </visual> 
+    </link>
+
+    <joint name="joint_X" type="revolute">
+        <parent link="sphere_1"/>
+        <child link="cylinder_2"/>
+        <axis xyz="1 0 0"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <limit lower="-3.14" upper="3.14" effort="10" velocity="1.0"/>
+    </joint>
+
+    <link name="cylinder_2">
+        <visual>
+            <geometry>
+                <cylinder radius="0.05" length="0.25"/>
+            </geometry>
+            <origin xyz="0 0 0.125" rpy="0 0 0"/>
+            <material name="gray"/>
+        </visual>
+    </link>
+
+
+    <joint name="joint_Z_2" type="revolute">
+        <parent link="cylinder_2"/>
+        <child link="cylinder_3"/>
+        <axis xyz="0 0 1"/>
+        <origin xyz="0 0 0.25" rpy="0 0 0"/>
+        <limit lower="-3.14" upper="3.14" effort="10" velocity="1.0"/>
+    </joint>
+
+
+    <link name="cylinder_3">
+        <visual>
+            <geometry>
+                <cylinder radius="0.05" length="0.25"/>
+            </geometry>
+            <origin xyz="0 0 0.125" rpy="0 0 0"/>
+            <material name="light_gray"/>
+        </visual>
+    </link>
+
+    <joint name="fixed_sphere_2" type="fixed">
+        <parent link="cylinder_3"/>
+        <child link="sphere_2"/>
+        <origin xyz="0 0 0.25" rpy="0 0 0"/>
+    </joint>
+
+
+    <link name="sphere_2">
+        <visual>
+            <geometry>
+                <sphere radius="0.06"/>
+            </geometry>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <material name="red"/>
+        </visual> 
+    </link>
+
+    <joint name="joint_X_2" type="revolute">
+        <parent link="sphere_2"/>
+        <child link="cylinder_4"/>
+        <axis xyz="1 0 0"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <limit lower="-3.14" upper="3.14" effort="10" velocity="1.0"/>
+    </joint>
+
+    <link name="cylinder_4">
+        <visual>
+            <geometry>
+                <cylinder radius="0.05" length="0.25"/>
+            </geometry>
+            <origin xyz="0 0 0.125" rpy="0 0 0"/>
+            <material name="gray"/>
+        </visual>
+    </link>
+
+    <joint name="joint_fixed_effector" type="fixed">
+        <origin xyz="0 0 0.25" rpy="0 0 0"/>
+        <parent link="cylinder_4"/>
+        <child link="end_effector"/>
+    </joint>
+
+    <link name="end_effector">
+    </link>
+
+</robot>

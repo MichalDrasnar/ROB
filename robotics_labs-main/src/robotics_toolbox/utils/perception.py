@@ -33,4 +33,20 @@ def find_hoop_homography(images: ArrayLike, hoop_positions: List[dict]) -> np.nd
     # todo HW03: Detect circle in each image
     # todo HW03: Find homography using cv2.findHomography. Use the hoop positions and circle centers.
 
+    #rotacni a translacni vektor v hoop_positions a podle obrazku
+    #1 najit kruznice v obrazku
+    #najit homografii z roviny obrazku do roviny (v hoop_positions je treti slozka vzdy stejan - nezajima me)
+    #homografie 3x3 matice mezi dvema rovinama transformuje souradnice
+
+    #H = cv2.findHomogramphy(center_circle, world_points) [0]
+    #y = H @ circle_centers
+
+    #03_homography.py - nacte obrazky, nacte json, zavola fci - to nam da matici
+    #vezme si souradnice a oseka z nich x, y
+    #prida 1 aby byly homogenni
+    #vezmu si H_inv
+    #
+
+    #nezapomen si pretahnout rozzipovany data
+
     return np.eye(3)

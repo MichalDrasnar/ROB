@@ -14,7 +14,7 @@ from robotics_toolbox.render import RendererSpatial
 np.random.seed(0)
 
 renderer = RendererSpatial()
-robot = SpatialManipulator(urdf_path=Path(__file__).parent.joinpath("robot.urdf"))
+robot = SpatialManipulator(urdf_path=Path(__file__).parent.joinpath("robot_copy.urdf"))
 
 renderer.plot_manipulator(robot)
 

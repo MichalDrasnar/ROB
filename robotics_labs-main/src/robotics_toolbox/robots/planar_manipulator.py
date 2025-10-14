@@ -12,7 +12,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 from shapely import MultiPolygon, LineString, MultiLineString
 
-from robotics_toolbox.core import SE2, SE3
+from robotics_toolbox.core import SE2, SE3, SO2
 from robotics_toolbox.robots.robot_base import RobotBase
 
 
@@ -87,7 +87,21 @@ class PlanarManipulator(RobotBase):
     def flange_pose(self) -> SE2:
         """Return the pose of the flange in the reference frame."""
         # todo HW02: implement fk for the flange
-        return SE2()
+
+        #theory is for 
+        # R-first rotate for q[i]parameter - variable angle
+        #         then translate for link_parameters[i] - constant length
+        # P-first rotate for link_parameters[i] - constant angle
+        #         then translate for q[i]parameter - variable length
+        ret = SE2()
+        ret.rotation = self.base_pose.rotation
+        ret.translation = self.base_pose.translation.copy()
+        for i in range(len(self.q)):
+            if self.structure[i] == 'R':
+                ret *= SE2(rotation=self.q[i]) * SE2(translation=[self.link_parameters[i], 0])
+            else:  # self.structure[i] == "P":
+                ret *= SE2(rotation=self.link_parameters[i]) * SE2(translation=[self.q[i], 0])
+        return ret
 
     def fk_all_links(self) -> list[SE2]:
         """Compute FK for frames that are attached to the links of the robot.
@@ -95,6 +109,20 @@ class PlanarManipulator(RobotBase):
         """
         # todo HW02: implement fk
         frames = []
+        rot = self.base_pose.rotation
+        trans = self.base_pose.translation.copy()
+        frames.append(SE2(rotation=rot, translation=trans.copy()))
+        for i in range(len(self.q)):
+            if self.structure[i] == 'R':
+                rot = rot * SO2(self.q[i])
+                trans = trans + rot.act([self.link_parameters[i], 0])
+
+            else: #if self.structure[i] == 'P':
+                rot = rot * SO2(self.link_parameters[i])
+                trans = trans + rot.act([self.q[i], 0])
+            
+            frames.append(SE2(rotation=rot, translation=trans.copy()))
+        
         return frames
 
     def _gripper_lines(self, flange: SE2):
