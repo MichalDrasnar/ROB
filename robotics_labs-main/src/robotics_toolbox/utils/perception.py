@@ -32,6 +32,52 @@ def find_hoop_homography(images: ArrayLike, hoop_positions: List[dict]) -> np.nd
 
     # todo HW03: Detect circle in each image
     # todo HW03: Find homography using cv2.findHomography. Use the hoop positions and circle centers.
+    H = np.eye(3)
+    src_points = [] #circle centers in image
+    dst_points = [] #hoop positions in world coordinates
+
+    #RGB to GRAY
+    for i in range(images.shape[0]):
+        img = images[i]
+        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        #circles = cv2.HoughCircles(img_gray, cv2.HOUGH_GRADIENT, dp=1, minDist=100, param1=100, param2=30, minRadius=10, maxRadius=100)
+        circles = cv2.HoughCircles(img_gray, cv2.HOUGH_GRADIENT, dp=1.2, minDist=50, param1=100, param2=30, minRadius=97, maxRadius=102)
+        #cv2.imshow("Image", img_gray)
+        #cv2.waitKey(0)  
+        #cv2.destroyAllWindows()
+        x = circles[0][0][0] if circles is not None else None
+        y = circles[0][0][1] if circles is not None else None
+        """
+        if circles is not None:
+            print(f"Image {i}: Detected circle at (x={circles[0][0][0]}, y={circles[0][0][1]}) with radius {circles[0][0][2]}")
+        else:
+            print(f"Image {i}: No circles detected")"""
+        
+        if x is not None and y is not None:
+            #print("AAAAAAAAAAAAAAAAA")
+            src_points.append([x, y, 1.0])
+            hoop_pos = hoop_positions[i]['translation_vector']
+            dst_points.append([hoop_pos[0], hoop_pos[1], 1.0])
+
+    #Convert to numpy arrays
+    src_points = np.array(src_points, dtype=np.float32)
+    dst_points = np.array(dst_points, dtype=np.float32)
+    H, mask = cv2.findHomography(src_points, dst_points, method=0)
+    #print("Homography matrix H:")
+    #print(H)
+
+    #testovani
+    for i in range(src_points.shape[0]):
+        src_pt = src_points[i]
+        dst_pt = dst_points[i]
+        projected_pt = H @ src_pt
+        projected_pt /= projected_pt[2]  # Normalize to make the last coordinate 1
+        print(f"Source point: {src_pt}, Projected point: {projected_pt}, Actual point: {dst_pt}")
+        print("\n")
+
+    return H
+
+
 
     #rotacni a translacni vektor v hoop_positions a podle obrazku
     #1 najit kruznice v obrazku
@@ -48,5 +94,3 @@ def find_hoop_homography(images: ArrayLike, hoop_positions: List[dict]) -> np.nd
     #
 
     #nezapomen si pretahnout rozzipovany data
-
-    return np.eye(3)
