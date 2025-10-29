@@ -10,6 +10,8 @@ import numpy as np
 import cv2  # noqa
 
 
+
+
 def find_hoop_homography(images: ArrayLike, hoop_positions: List[dict]) -> np.ndarray:
     """
     Find homography based on images containing the hoop and the hoop positions loaded from
@@ -35,45 +37,124 @@ def find_hoop_homography(images: ArrayLike, hoop_positions: List[dict]) -> np.nd
     H = np.eye(3)
     src_points = [] #circle centers in image
     dst_points = [] #hoop positions in world coordinates
+    img_fails = 0
 
-    #RGB to GRAY
     for i in range(images.shape[0]):
+        print("" \
+        "" \
+        "Processing image ", i)
         img = images[i]
-        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        #circles = cv2.HoughCircles(img_gray, cv2.HOUGH_GRADIENT, dp=1, minDist=100, param1=100, param2=30, minRadius=10, maxRadius=100)
-        circles = cv2.HoughCircles(img_gray, cv2.HOUGH_GRADIENT, dp=1.2, minDist=50, param1=100, param2=30, minRadius=97, maxRadius=102)
-        #cv2.imshow("Image", img_gray)
-        #cv2.waitKey(0)  
-        #cv2.destroyAllWindows()
-        x = circles[0][0][0] if circles is not None else None
-        y = circles[0][0][1] if circles is not None else None
+
+        #DST
+        x, y = hoop_positions[i]["translation_vector"][:2]
+        dst_points.append([x, y, 1.0])
+
+
+
+        #SRC (+img_fails)
+
+        #BGR to HSV
+        #parameters for thresholding black
+        Hue = 100
+        Sat = 100
+        Val = 100
+        threshold = 60
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        # not needed conversions thanks to just defined Hue, Sat, Val and trheshhold
+        """H = Hue / 2  # 0-179 for H
+        S = (Sat / 100) * 255  # percentage to 0-255
+        V = (Val / 100) * 255  # percentage to 0-255"""
+        #Creating lower and upper bounds
+        lower_bound = np.array([Hue - threshold, Sat - threshold, Val - threshold])
+        upper_nound = np.array([Hue + threshold, Sat + threshold, Val + threshold])
+        # Make a mask for range betwen bounds lower_bound and upper_bound
+        mask = cv2.inRange(hsv, lower_bound, upper_nound)
+
         """
-        if circles is not None:
-            print(f"Image {i}: Detected circle at (x={circles[0][0][0]}, y={circles[0][0][1]}) with radius {circles[0][0][2]}")
+        #visualization of mask
+        cv2.imshow("Mask", mask)
+        cv2.waitKey(200)  # zobrazí 2 vteřiny
+        cv2.destroyAllWindows()  # zavře okno po pauze"""
+
+
+        #blur - mmedain or gaussian
+        blur = cv2.medianBlur(mask, 5)
+        #blur = cv2.GaussianBlur(mask, (5,5), 0)
+
+        #finding cicrles with cv2.HoughCircles
+        circles = cv2.HoughCircles( # Hough transform to find circles
+            blur,
+            cv2.HOUGH_GRADIENT,
+            dp=1, # downsampling
+            minDist=max(10, blur.shape[0]//8), # minimal center distance between circles
+            param1=100, # upper edge det. threshold
+            param2=15, # acumulator threshold
+            minRadius=120, #px - min radius
+            maxRadius=150 #px - no max limit
+        )
+        ## circles = example: [[[x, y, r]], ...]
+
+
+        """
+        # visualization of found circles
+        if circles is not None and circles.shape[1] > 1:
+            #now i dont want to deal with multiple circles found
+            #TODO
+            print("TOOOO MANY CIRCLES FOUND!!!")
+            print(len(circles), "circles found in image ", i)
+        elif circles is not None:
+            print("Circle found in image ", i)
+            print("radius: ", circles[0][0][2], "px")
+            circles = np.round(circles[0, :]).astype(int)  # [ [x, y, r], ... ]
+            for (x, y, r) in circles:
+                cv2.circle(img, (x, y), r, (0, 255, 0), 4)
+                cv2.rectangle(img, (x - 5, y - 5), (x + 5, y + 5), (0, 128, 255), -1)
+            cv2.imshow("Detected Circles", img)
+            cv2.waitKey(200)  # zobrazí 2 vteřiny
+            cv2.destroyAllWindows()  # zavře okno po pauze
         else:
-            print(f"Image {i}: No circles detected")"""
+            print("No circle found in image ", i)
+            continue #skip this image if no circle found"""
         
-        if x is not None and y is not None:
-            #print("AAAAAAAAAAAAAAAAA")
-            src_points.append([x, y, 1.0])
-            hoop_pos = hoop_positions[i]['translation_vector']
-            dst_points.append([hoop_pos[0], hoop_pos[1], 1.0])
 
-    #Convert to numpy arrays
-    src_points = np.array(src_points, dtype=np.float32)
-    dst_points = np.array(dst_points, dtype=np.float32)
-    H, mask = cv2.findHomography(src_points, dst_points, method=0)
-    #print("Homography matrix H:")
-    #print(H)
+        if circles is not None and circles.shape[1] > 1 :
+            print("Error: multiple circles found in", i)
+            continue
+        elif circles is None:
+            img_fails += 1
+            print("Error: no circles found in", i)   
+            continue
 
-    #testovani
-    for i in range(src_points.shape[0]):
+        #centres of detected circles
+        x, y, r = circles[0][0]
+        src_points.append([x, y])
+
+    #not enough points detected
+    if (len(src_points) < 4):
+        print("Error: not enough points detected:", len(src_points))
+        return np.eye(3)
+
+    #converz to np arrays
+    src_pts = np.asarray(src_points, dtype=np.float32)
+    dst_pts = np.asarray(dst_points, dtype=np.float32)
+
+    H, inliers = cv2.findHomography(src_pts, dst_pts, method=cv2.RANSAC)
+    if H is None:
+        print("Error: Homography could not be computed.")
+        return np.eye(3)
+    
+    print("FOUND HOMOGRAPHY")
+
+
+
+    """#testovani
+    for i in range(len(src_points)):
         src_pt = src_points[i]
         dst_pt = dst_points[i]
         projected_pt = H @ src_pt
         projected_pt /= projected_pt[2]  # Normalize to make the last coordinate 1
         print(f"Source point: {src_pt}, Projected point: {projected_pt}, Actual point: {dst_pt}")
-        print("\n")
+        print("\n")"""
 
     return H
 
