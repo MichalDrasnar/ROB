@@ -15,6 +15,7 @@ from tests.utils import planar_manipulator_to_pin, sample_planar_manipulator
 class TestJacobian(unittest.TestCase):
 
     def _pin_jacobian(self, robot):
+        print("COMPUTING PINOCCHIO JACOBIAN")
         model = planar_manipulator_to_pin(robot)
         data: pin.Data = model.createData()
         pin.forwardKinematics(model, data, robot.q)
@@ -25,19 +26,26 @@ class TestJacobian(unittest.TestCase):
         if robot.dof == 1:
             jac = jac[:, np.newaxis]
         jac = jac[[0, 1, 5], :]
+        for i in range(robot.dof):
+            print(f"  PI_Joint {i}: Pinocchio Jacobian column: {jac[:, i]}  , Joint type: {robot.structure[i]}")
+        print("COMPUTED PINOCCHIO JACOBIAN PASS")
         return jac
 
     def test_analytical_to_pin(self):
+        print("TESTING ANALYTICAL TO PINOCCHIO")
         np.random.seed(0)
         for _ in range(100):
+            print("TEST ITERATION", _)
             robot = sample_planar_manipulator()
             jac_pin = self._pin_jacobian(robot)
             jac = robot.jacobian()
             self.assertEqual(jac.shape, (3, robot.dof))
             self.assertEqual(jac_pin.shape, (3, robot.dof))
             self.assertTrue(np.allclose(jac_pin, jac, rtol=1e-4, atol=1e-4))
+        print("ANALYTICAL TO PINOCCHIO TEST PASSED")
 
     def test_finite_difference_to_pin(self):
+        print("TESTING FINITE DIFFERENCE TO PINOCCHIO")
         np.random.seed(0)
         for _ in range(100):
             robot = sample_planar_manipulator()
@@ -46,8 +54,10 @@ class TestJacobian(unittest.TestCase):
             self.assertEqual(jac.shape, (3, robot.dof))
             self.assertEqual(jac_pin.shape, (3, robot.dof))
             self.assertTrue(np.allclose(jac_pin, jac, rtol=1e-4, atol=1e-4))
+        print("FINITE DIFFERENCE TO PINOCCHIO TEST PASSED")
 
     def test_imported_modules(self):
+        print("TESTING IMPORTED MODULES")
         """Test that you are not using pinocchio inside your implementation."""
         with open(inspect.getfile(PlanarManipulator)) as f:
             self.assertTrue("pinocchio" not in f.read())
@@ -55,6 +65,7 @@ class TestJacobian(unittest.TestCase):
             self.assertTrue("cv2" not in f.read())
         with open(inspect.getfile(PlanarManipulator)) as f:
             self.assertTrue("scipy" not in f.read())
+        print("IMPORTED MODULES TEST PASSED")
 
 
 if __name__ == "__main__":

@@ -149,12 +149,98 @@ class PlanarManipulator(RobotBase):
         configuration."""
         jac = np.zeros((3, len(self.q)))
         # todo: HW04 implement jacobian computation
+        
+        print("")
+        print("Computing analytical jacobian")
+
+        n = len(self.q)
+
+        #precompute cumulative angles
+        theta_base = self.base_pose.rotation.angle
+        theta_star = np.zeros(n)  #cumulative angle
+        for i in range(n):
+            theta_star[i] = theta_base
+            for j in range(i+1):
+                if self.structure[j] == 'R':
+                    theta_star[i] += self.q[j]
+                elif self.structure[j] == 'P':
+                    theta_star[i] += self.link_parameters[j]
+
+        
+        for i in range(n):
+            #declare partial derivatives
+            dx_dqi = 0.0
+            dy_dqi = 0.0
+            dtheta_dqi = 0.0
+            #compute partial derivatives based on joint type
+            if self.structure[i] == 'R':
+                dtheta_dqi = 1.0
+                for j in range(i, n):
+                    dx_dqi += -self.link_parameters[j] * np.sin(theta_star[j])
+                    dy_dqi += self.link_parameters[j] * np.cos(theta_star[j])
+            elif self.structure[i] == 'P':
+                dtheta_dqi = 0.0
+                dx_dqi = np.cos(theta_star[i])
+                dy_dqi = np.sin(theta_star[i])
+
+            
+            else:
+                raise ValueError("Unknown joint type in structure")
+            
+            jac[0, i] = dx_dqi
+            jac[1, i] = dy_dqi
+            jac[2, i] = dtheta_dqi
+        
+        #print(jac)
+        for i in range(n):
+            print(f"  MY_Joint {i}: Pinocchio Jacobian column: {jac[:, i]}  , Joint type: {self.structure[i]}")
+
         return jac
 
     def jacobian_finite_difference(self, delta=1e-5) -> np.ndarray:
         jac = np.zeros((3, len(self.q)))
         # todo: HW04 implement jacobian computation
+        print("Computing finite difference jacobian")
+        print("")
+        n = len(self.q)
+        q_copy = self.q.copy() #backup
+        dq = self.q.dtype.type(delta)
+
+        for i in range(n):
+            #restore q+ a q-
+            q_plus, q_minus = q_copy.copy(), q_copy.copy()
+
+            #move only ith joint by +dq and -dq
+            q_plus[i] += dq
+            q_minus[i] -= dq
+
+            #compute poses for q+ and q-
+            #positive perturbation
+            self.set_configuration(q_plus)
+            pose_plus = self.flange_pose()
+            #negative perturbation
+            self.set_configuration(q_minus)
+            pose_minus = self.flange_pose()
+
+            #central difference
+            jac[0, i] = (pose_plus.translation[0] - pose_minus.translation[0]) / (2 * dq) #dx/dqi
+            jac[1, i] = (pose_plus.translation[1] - pose_minus.translation[1]) / (2 * dq) #dy/dqi
+            jac[2, i] = (pose_plus.rotation.angle - pose_minus.rotation.angle) / (2 * dq) #dtheta/dqi
+
+        #restore q
+        self.set_configuration(q_copy)
+
+        #print(jac)
+        for i in range(n):
+            print(f"Joint {i}: dx/dq={jac[0,i]}, dy/dq={jac[1,i]}, dtheta/dq={jac[2,i]}")
+
         return jac
+
+
+
+
+
+
 
     def ik_numerical(
         self,
