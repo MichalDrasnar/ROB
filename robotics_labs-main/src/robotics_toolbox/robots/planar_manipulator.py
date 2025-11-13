@@ -149,7 +149,7 @@ class PlanarManipulator(RobotBase):
         configuration."""
         jac = np.zeros((3, len(self.q)))
         # todo: HW04 implement jacobian computation
-        
+
         print("")
         print("Computing analytical jacobian")
 
@@ -176,8 +176,14 @@ class PlanarManipulator(RobotBase):
             if self.structure[i] == 'R':
                 dtheta_dqi = 1.0
                 for j in range(i, n):
-                    dx_dqi += -self.link_parameters[j] * np.sin(theta_star[j])
-                    dy_dqi += self.link_parameters[j] * np.cos(theta_star[j])
+                    if self.structure[j] == 'R':
+                        length = self.link_parameters[j]
+                    elif self.structure[j] == 'P':
+                        length = self.q[j]
+                    else:
+                        raise ValueError("Unknown joint type in structure")
+                    dx_dqi += -length * np.sin(theta_star[j])
+                    dy_dqi += length * np.cos(theta_star[j])
             elif self.structure[i] == 'P':
                 dtheta_dqi = 0.0
                 dx_dqi = np.cos(theta_star[i])
